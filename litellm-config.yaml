@@ -13,3 +13,5 @@ model_list:
 
 litellm_settings:
   callbacks: ["otel"] # Activa la exportación OTel
+  stream_options:
+    include_usage: true
