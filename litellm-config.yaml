@@ -1,0 +1,15 @@
+model_list:
+  # Ejemplo con Ollama local (0 costes)
+  - model_name: llama3
+    litellm_params:
+      model: ollama/llama3
+      api_base: http://host.docker.internal:11434
+
+  # Ejemplo con OpenAI (requiere API key)
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+litellm_settings:
+  callbacks: ["otel"] # Activa la exportación OTel

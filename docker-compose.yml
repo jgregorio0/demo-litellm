@@ -1,0 +1,38 @@
+services:
+  # 1. Servidor Jaeger para visualizar trazas
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686" # UI de Jaeger (Navegador)
+      - "4317"        # Puerto gRPC interno de trazas
+
+  # 2. Colector de OpenTelemetry
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # Recibe trazas gRPC de LiteLLM
+    depends_on:
+      - jaeger
+
+  # 3. LiteLLM Proxy Gateway
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    ports:
+      - "4000:4000" # Endpoint OpenAI-compatible
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-master-key-demo-1234}
+      - LITELLM_OTEL_V2=true # OpenTelemetry de nueva generación
+      - OTEL_EXPORTER=otlp_grpc
+      - OTEL_ENDPOINT=http://otel-collector:4317
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-dummy} # Opcional si usas OpenAI
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      - otel-collector
